@@ -1,0 +1,107 @@
+=================================================================
+Arduino Serial IOBoard (ArduinoIOBoard) Instruktionsdokumentation
+=================================================================
+
+Grundlegendes:
+	Als "Master" wird das steuernde System bezeichnet, meistens der Computer.
+	Als "Slave" wird der Arduino/ATmega bezeichnet, der das IOBoard darstellen soll und auf dem dieses Programm läuft.
+	Instruktionen und Antworten werden nachfolgend als "Frames" bezeichnet.
+
+	Jeder Frame beginnt mit einigen Leerzeichen als Padding, dem das Zeichen : als Startzeichen folgt.
+	Der Frame endet mit dem Endzeichen ; und darauffolgend einige weitere Leerzeichen als Padding.
+	Somit beginnt das eigentliche Kommando bzw eine Antwort nach dem : und endet vor dem ;
+	
+	Beim Programmstart (normalerweise Verbindungsaufbau mit dem Arduino) sendet der Arduino die Meldung "SLAVEALIVE".
+	Dieser Frame würde auf der Übertragungsstrecke folgend aussehen (ohne Anführungszeichen): "     :SLAVEALIVE;     "
+	Die Meldung "SLAVEALIVE" ist für den Master das Zeichen, die Digital- und Analog-Ports zu initialisieren,
+	also die Instruktion "SetPinMode" bzw die Instruktion "FlankeInit" auszuführen.
+	
+	Ein Befehl vom Master an den Slave besteht prinzipiell aus 7 Zeichen.
+	Das erste Zeichen bezeichnet die auszuführende Instruktion in Form eines alphabetischen Zeichens in Großschreibung.
+	Das zweite und dritte Zeichen bezeichnet den betroffenen Digital/Analog-Port.
+		Beim ATmega328: Digital von 00 bis 13 und Analog von A0 bis A5.
+	Das vierte Zeichen ist das erste Argument in Form eines alphabetischen Zeichens in Großschreibung.
+	Das fünfte, sechste und siebte Zeichen ist das zweite Argument in Form eines Zahlenwertes (z.B. 000 oder 255)
+
+	Eine Ausnahme der 7-Zeichen-Regel besteht im Befehl "Read". Dieser wird später erläutert.
+
+
+Instruktionen - Übersicht:
+	- SetPinMode		Setzt den Ein-/Ausgangsmodus eines Analog-/Digitalpins.
+	- WriteDigital		Setzt den Wert eines Digitalausgangs.
+	- AnalogWrite		Setzt den PWM-Wert eines PWM-fähigen Digitalausgangs.
+	- PositiveFlanke	Registriert eine positive (steigende) Flankenüberwachung für einen Eingang.
+	- NegativeFlanke	Registriert eine negative (fallende) Flankenüberwachung für einen Eingang.
+
+
+Instruktion "SetPinMode":
+	Beschreibung:
+		Setzt den Ein-/Ausgangsmodus eines Analog-/Digitalpins.
+	Befehlsaufbau:
+		Zeichen 1:	S
+		Zeichen 2,3: 	Der zu setzende Port.
+				Beim ATmega328: Digital von 00 bis 13 und Analog von A0 bis A5.
+		Zeichen 4:	I|O|P
+				Input|Output|PullUpInput (PullUpInput aktiviert den internen PullUp-Widerstand)
+		Zeichen 5,6,7:	Auf 000 setzen, da nicht verwendet.
+	Beispiele:
+		":S13O000;"	Setzt den DigitalPort 13 als Ausgang.
+		":SA1I000;"	Setzt den AnalogPort A1 als Eingang.
+		":S03P000;"	Setzt den DigitalPort 03 als Eingang und aktiviert den internen PullUp-Widerstand.
+	Rückgabe:
+		":SUCCESS|<BEFEHL>;" wobei "<BEFEHL>" durch den übermittelten, getrimmten Befehl ersetzt wird. Dient zu Kontrollzwecken.
+
+
+Instruktion "WriteDigital":
+	Beschreibung:
+		Setzt den Wert eines Digitalausgangs.
+	Befehlsaufbau:
+		Zeichen 1:	W
+		Zeichen 2,3:	Der zu setzende DigitalPort.
+				Beim ATmega328:	Digital von 00 bis 13.
+		Zeichen 4:	H|L
+				High (ein) oder Low (aus)
+		Zeichen 5,6,7:	Auf 000 setzen, da nicht verwendet.
+	Beispiele:
+		":W13H000;"	Setzt den Digitalausgang 13 auf den Wert High.
+		":W04L000;"	Setzt den Digitalausgang 04 auf den Wert Low.
+	Rückgabe:
+		":SUCCESS|<BEFEHL>;" wobei "<BEFEHL>" durch den übermittelten, getrimmten Befehl ersetzt wird. Dient zu Kontrollzwecken.
+
+
+Instruktion "AnalogWrite":
+	Beschreibung:
+		Setzt den PWM-Wert eines PWM-fähigen Digitalausgangs.
+	Befehlsaufbau:
+		Zeichen 1:	A
+		Zeichen 2,3:	Der zu setzende PWM-fähige DigitalPort.
+				Beim ATmega328 folgende Ports: 03, 05, 06, 09, 10, 11
+		Zeichen 4:	Auf X setzen, da nicht verwendet.
+		Zeichen 5,6,7:	Der zu setzende PWM-Wert (von 000 bis 255)
+	Beispiele:
+		":A06X212;"	Setzt den PWM-Wert des Digitalausgangs 06 auf 212.
+		":A11X033;"	Setzt den PWM-Wert des Digitalausgangs 11 auf 033.
+	Rückgabe:
+		":SUCCESS|<BEFEHL>;" wobei "<BEFEHL>" durch den übermittelten, getrimmten Befehl ersetzt wird. Dient zu Kontrollzwecken.
+
+
+Instruktion "PositiveFlanke" und "NegativeFlanke":
+	Beschreibung:
+		Registriert eine positive (steigende) oder negative (fallende) Flankenüberwachung für einen Eingang.
+	Befehlsaufbau:
+		Zeichen 1:	P|N
+				Positive|Negative Flankenüberwachung
+		Zeichen 2,3:	Der zu überwachende Eingang.
+				Beim ATmega328: Digital von 00 bis 13 und Analog von A0 bis A5.
+		Zeichen 4:	S|R
+				Set|Reset (Flankenauswertung setzen oder zurücksetzen)
+		Zeichen 5,6,7:	Grenzwert, unter dem der Wert von Analogeingängen als Low interpretiert wird und
+				über dem der Wert als High interpretiert wird. Der Bereich von Analogeingängen beginnt bei 0
+				und endet bei 1023. Der maximal einstellbare Grenzwert liegt bei 999. Empfohlen ist ein Wert von 511.
+	Beispiele:
+		":PA0S511;"	Positive Flankenüberwachung
+	Rückgabe:
+		":SUCCESS|<BEFEHL>;" wobei "<BEFEHL>" durch den übermittelten, getrimmten Befehl ersetzt wird. Dient zu Kontrollzwecken.
+	Rückgabe bei Ereignisauslösung:
+		":FLANKE_<TYPE><INPUT>;" wobei "<TYPE>" durch P|N für positive oder negative Flanke ersetzt wird und "<INPUT>"
+		durch den auslösenden Eingang ersetzt wird. (Beim ATmega328: Digital von 00 bis 13 und Analog von A0 bis A5)

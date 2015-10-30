@@ -1,0 +1,74 @@
+
+// Supported instructions
+// pinMode = setPin(device, pinnumber, INPUT/OUTPUT/INPUT_PULLUP)
+// digitalWrite = writePin(device,pinnumber,HIGH/LOW)
+// analogWrite = analogWritePin(device,pinnumber,0-255)
+// getStatus(device)
+
+// A0 - analog read / digital write
+// A1 - analog read / digital write
+// A2 - analog read / digital write
+// A3 - analog read / digital write
+// A4 - IN USE as SDA
+// A5 - IN USE as SCL
+
+//  1 - digital read / write + RX
+//  2 - digital read / write + TX  + Interrupt
+//  3 - digital read / write + PWM + Interrupt
+//  4 - digital read / write
+//  5 - digital read / write + PWM
+//  6 - digital read / write + PWM
+//  7 - digital read / write
+//  8 - digital read / write
+//  9 - digital read / write + PWM
+// 10 - digital read / write + PWM + SPI - SS
+// 11 - digital read / write + PWM + SPI - MOSI
+// 12 - digital read / write +       SPI - MISO
+// 13 - digital read / write + LED + SPI - SCK
+
+// HOW TO USE
+
+// sending commands
+
+// general: all commands must be 7 bytes long + 1 ending byte
+
+// 1) to set the pinMode write a message with 7 characters on I2C bus to the arduino
+// first character = S for set pinMode
+// second & third character are pin ID 00 - 13 for digital pins & A0 - A3 for analog pins
+// fourth character is to set the mode I for INPUT, O for OUTPUT, P for INPUT_PULLUP
+// character 5,6,7 are not used, set to 000
+
+// 2) to turn the pin on or off write a message with 7 characters on I2C bus to the arduino
+// first character = W for digitalWrite
+// second & third character are pin ID 00 - 13 for digital pins & A0 - A3 for analog pins
+// fourth character is to turn off or on H for HIGH and L for LOW
+// character 5,6,7 are not used, set to 000
+
+// 3) to turn use PWM write a message with 7 characters on I2C bus to the arduino
+// first character = A for analogWrite
+// second & third character are pin ID 00 - 13 for digital pins & A0 - A3 for analog pins
+// forth character is not used, set to X
+// fifth - seventh character are used to write the PWM cycle (000-255)
+
+// 4) to get a status with pin readings send Wire.requestFrom(device, #chars = 30)
+// the arduino will send back 30 chars 
+// char 1-14 for each digital pin 1 = on 0 = off
+// char 15-18 for reading of A0, 1000 is added to the A0 reading in order to guarantee a 4 digit reading, subtract 1000 to get the proper reading
+// char 19-22 for reading of A1, 1000 is added to the A0 reading in order to guarantee a 4 digit reading, subtract 1000 to get the proper reading
+// char 23-26 for reading of A2, 1000 is added to the A0 reading in order to guarantee a 4 digit reading, subtract 1000 to get the proper reading
+// char 27-30 for reading of A3, 1000 is added to the A0 reading in order to guarantee a 4 digit reading, subtract 1000 to get the proper reading
+
+// 5) to set a callback for rising (pos) or falling (neg) send a command:
+// first character = P for positive flank and first character = N for negative flank
+// second & third character are pin ID 00 - 13 for digital pins & A0 - A3 for analog pins
+// fourth character is S to set and R to reset (clear) the callback
+// character 5,6,7 is the level for analog inputs, over which the pin is considered as high. Default value = 511
+//
+// the arduino will send back a three-digit string
+// P13
+// char one is the type of flank
+// chars two and three is pin ID 00 - 13 for digital pins & A0 - A3 for analog pins
+
+// Created 17 July 2013
+
+// This example code is in the public domain.
